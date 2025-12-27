@@ -1,7 +1,7 @@
-const RADIO_NAME = 'Jailson Web Rádio';
+const RADIO_NAME = 'FM Olive';
 
 // Change Stream URL Here, Supports, ICECAST, ZENO, SHOUTCAST, RADIOJAR and any other stream service.
-const URL_STREAMING = 'https://stream.zeno.fm/yn65fsaurfhvv';
+const URL_STREAMING = 'https://radio01.ferozo.com/proxy/ra01001227?mp=/stream';
 
 //API URL /
 const API_URL = 'https://twj.es/free/?url='+URL_STREAMING;
@@ -526,3 +526,4 @@ function intToDecimal(vol) {
 function decimalToInt(vol) {
     return vol * 100;
 } 
+
