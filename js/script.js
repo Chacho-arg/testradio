@@ -29,7 +29,7 @@ window.addEventListener('load', () => {
     getStreamingData();
 
     // Define o intervalo para atualizar os dados de streaming a cada 10 segundos
-    const streamingInterval = setInterval(getStreamingData, 10000);
+    const streamingInterval = setInterval(getStreamingData, 3000);
 
     // Ajusta a altura da capa do álbum para ser igual à sua largura
     const coverArt = document.querySelector('.cover-album');
@@ -323,3 +323,4 @@ const getDataFromMusicBrainz = async (artist, title, defaultArt, defaultCover) =
     return results;
   }
 };
+
