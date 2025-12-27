@@ -341,6 +341,7 @@ const getDataFromITunes = async (artist, title, defaultArt, defaultCover) => {
 
 // AUDIO 
 
+const AUDIO_TYPE = 'audio/aac';
 
 // Variável global para armazenar as músicas
 var audio = new Audio(URL_STREAMING);
@@ -526,4 +527,5 @@ function intToDecimal(vol) {
 function decimalToInt(vol) {
     return vol * 100;
 } 
+
 
