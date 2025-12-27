@@ -14,7 +14,7 @@ let userInteracted = true;
 
 let musicaAtual = null;
 
-// Cache para a API do iTunes
+// Cache para las búsquedas de portadas
 const cache = {};
 
 window.addEventListener('load', () => { 
@@ -32,9 +32,8 @@ window.addEventListener('load', () => {
     const streamingInterval = setInterval(getStreamingData, 10000);
 
     // Ajusta a altura da capa do álbum para ser igual à sua largura
-    const coverArt = document.querySelector('.cover-album'); // Use querySelector para selecionar o elemento
+    const coverArt = document.querySelector('.cover-album');
     if (coverArt) { 
-      // Adiciona uma verificação para garantir que o elemento exista
       coverArt.style.height = `${coverArt.offsetWidth}px`;
     } else {
       console.warn("Elemento .cover-album não encontrado.");
@@ -54,17 +53,14 @@ class Page {
             const lyricsSong = document.getElementById('lyricsSong');
         
             if (song !== currentSong.textContent || artist !== currentArtist.textContent) { 
-                // Esmaecer o conteúdo existente (fade-out)
                 currentSong.classList.add('fade-out');
                 currentArtist.classList.add('fade-out');
         
                 setTimeout(function() {
-                    // Atualizar o conteúdo após o fade-out
                     currentSong.textContent = song; 
                     currentArtist.textContent = artist;
                     lyricsSong.textContent = song + ' - ' + artist;
         
-                    // Esmaecer o novo conteúdo (fade-in)
                     currentSong.classList.remove('fade-out');
                     currentSong.classList.add('fade-in');
                     currentArtist.classList.remove('fade-out');
@@ -72,7 +68,6 @@ class Page {
                 }, 500); 
         
                 setTimeout(function() {
-                    // Remover as classes fade-in após a animação
                     currentSong.classList.remove('fade-in');
                     currentArtist.classList.remove('fade-in');
                 }, 1000); 
@@ -87,32 +82,22 @@ class Page {
 
             const defaultCoverArt = "img/cover.png";
 
-            // Extrai o título da música e o nome do artista,
-            // tratando a possibilidade de 'song' e 'artist' serem objetos ou strings.
             const songTitle = typeof info.song === "object" ? info.song.title : info.song;
             const songArtist = typeof info.artist === "object" ? info.artist.title : info.artist;
 
-            // Define o conteúdo dos elementos HTML,
-            // incluindo uma verificação para evitar erros caso os valores estejam ausentes.
             songName.innerHTML = songTitle || "Desconhecido";
             artistName.innerHTML = songArtist || "Desconhecido";
 
             try {
-                // Utiliza os valores extraídos para buscar a capa do álbum na API do iTunes.
-                const data = await getDataFromITunes(songArtist, songTitle, defaultCoverArt, defaultCoverArt);
-                // Define a imagem de fundo do elemento 'coverHistoric' com a capa encontrada.
+                const data = await getDataFromMusicBrainz(songArtist, songTitle, defaultCoverArt, defaultCoverArt);
                 coverHistoric.style.backgroundImage = "url(" + (data.art || defaultCoverArt) + ")";
             } catch (error) {
-                // Captura e imprime o erro no console para ajudar na depuração.
-                console.log("Erro ao buscar dados da API do iTunes:");
+                console.log("Error buscando portada en MusicBrainz:");
                 console.error(error);
-                // Define a imagem de fundo como a capa padrão em caso de erro.
                 coverHistoric.style.backgroundImage = "url(" + defaultCoverArt + ")";
             }
 
-            // Adiciona a classe 'animated' para a animação de slide.
             historicDiv.classList.add("animated", "slideInRight");
-            // Remove a classe 'animated' após 2 segundos para preparar para a próxima animação.
             setTimeout(() => historicDiv.classList.remove("animated", "slideInRight"), 2000);
         };
                 
@@ -122,17 +107,14 @@ class Page {
             const defaultCoverArt = 'img/cover.png'; 
         
             try {
-                const data = await getDataFromITunes(artist, song, defaultCoverArt, defaultCoverArt);
+                const data = await getDataFromMusicBrainz(artist, song, defaultCoverArt, defaultCoverArt);
         
-                // Aplica a imagem de capa (sempre, mesmo se for a padrão)
                 coverArt.style.backgroundImage = 'url(' + data.art + ')';
                 coverBackground.style.backgroundImage = 'url(' + data.cover + ')';
         
-                // Adiciona/remove classes para animação (se necessário)
                 coverArt.classList.add('animated', 'bounceInLeft');
                 setTimeout(() => coverArt.classList.remove('animated', 'bounceInLeft'), 2000);
               
-                // Atualiza MediaSession (se suportado)
                 if ('mediaSession' in navigator) {
                     const artwork = [
                         { src: data.art, sizes: '96x96',   type: 'image/png' },
@@ -150,14 +132,15 @@ class Page {
                     });
                 }
             } catch (error) {
-                console.log("Erro ao buscar dados da API do iTunes:", error);
-                // ... (lógica para lidar com o erro)
+                console.log("Error buscando portada en MusicBrainz:", error);
+                coverArt.style.backgroundImage = 'url(' + defaultCoverArt + ')';
+                coverBackground.style.backgroundImage = 'url(' + defaultCoverArt + ')';
             }
         };
 
         this.changeVolumeIndicator = function(volume) {
-            document.getElementById('volIndicator').textContent = volume; // Use textContent em vez de innerHTML
-          
+            document.getElementById('volIndicator').textContent = volume;
+        
             if (typeof Storage !== 'undefined') {
               localStorage.setItem('volume', volume);
             }
@@ -165,7 +148,7 @@ class Page {
           
         this.setVolume = function() {
             if (typeof Storage !== 'undefined') {
-              const volumeLocalStorage = localStorage.getItem('volume') || 80; // Operador de coalescência nula (??)
+              const volumeLocalStorage = localStorage.getItem('volume') || 80;
           
               document.getElementById('volume').value = volumeLocalStorage;
               document.getElementById('volIndicator').textContent = volumeLocalStorage;
@@ -183,12 +166,10 @@ class Page {
               if (data.type === 'exact' || data.type === 'aprox') {
                 const lyric = data.mus[0].text;
           
-                //document.getElementById('lyric').textContent = lyric.replace(/\n/g, '<br />'); Use textContent em vez de innerHTML
                 document.getElementById('lyric').innerHTML = lyric.replace(/\n/g, '<br />');
                 openLyric.style.opacity = "1";
                 openLyric.setAttribute('data-toggle', 'modal');
           
-                // Esconde o modal caso esteja visível
                 modalLyric.style.display = "none";
                 modalLyric.setAttribute('aria-hidden', 'true');
                 if (document.getElementsByClassName('modal-backdrop')[0]) {
@@ -206,7 +187,6 @@ class Page {
         };
     }
 }
-
 
 async function getStreamingData() {
     try {
@@ -237,7 +217,7 @@ async function getStreamingData() {
                     ? data.song_history.map((item) => ({ song: item.song.title, artist: item.song.artist }))
                     : data.history;
 
-                const maxSongsToDisplay = 4; // Adjust as needed
+                const maxSongsToDisplay = 4;
                 const limitedHistory = historyArray.slice(Math.max(0, historyArray.length - maxSongsToDisplay));
 
                 for (let i = 0; i < limitedHistory.length; i++) {
@@ -266,8 +246,6 @@ async function getStreamingData() {
     }
 }
 
-
-// Função para buscar dados de streaming de uma API específica
 async function fetchStreamingData(apiUrl) {
   try {
     const response = await fetch(apiUrl);
@@ -279,253 +257,69 @@ async function fetchStreamingData(apiUrl) {
     return data;
   } catch (error) {
     console.log("Erro ao buscar dados de streaming da API:", error);
-    return null; // Retorna null em caso de erro
+    return null;
   }
 }
 
-// Função para alterar o tamanho da imagem do iTunes
-function changeImageSize(url, size) {
-  const parts = url.split("/");
-  const filename = parts.pop();
-  const newFilename = `${size}${filename.substring(filename.lastIndexOf("."))}`;
-  return parts.join("/") + "/" + newFilename;
-}
-
-// Função para buscar dados da API do iTunes
-const getDataFromITunes = async (artist, title, defaultArt, defaultCover) => {
-  let text;
-  if (artist === title) {
-      text = `${title}`;
-  } else {
-      text = `${artist} - ${title}`;
-  }
+// Nueva función: Buscar portada con MusicBrainz + Cover Art Archive
+const getDataFromMusicBrainz = async (artist, title, defaultArt, defaultCover) => {
+  let text = artist === title ? title : `${artist} ${title}`;
   const cacheKey = text.toLowerCase();
+
   if (cache[cacheKey]) {
-      return cache[cacheKey];
+    return cache[cacheKey];
   }
 
-  const response = await fetch(`https://itunes.apple.com/search?limit=1&term=${encodeURIComponent(text)}`);
-  if (response.status === 403) {
-      const results = {
-          title,
-          artist,
-          art: defaultArt,
-          cover: defaultCover,
-          stream_url: "#not-found",
-      };
-      return results;
-  }
-  const data = response.ok ? await response.json() : {};
-  if (!data.results || data.results.length === 0) {
-      const results = {
-          title,
-          artist,
-          art: defaultArt,
-          cover: defaultCover,
-          stream_url: "#not-found",
-      };
-      return results;
-  }
-  const itunes = data.results[0];
-  const results = {
-      title: title, // Mantive o título original da transmissão
-      artist: artist, // Mantive o artista original da transmissão
-      thumbnail: itunes.artworkUrl100 || defaultArt,
-      art: itunes.artworkUrl100 ? changeImageSize(itunes.artworkUrl100, "600x600") : defaultArt,
-      cover: itunes.artworkUrl100 ? changeImageSize(itunes.artworkUrl100, "1500x1500") : defaultCover,
+  try {
+    // Paso 1: Buscar en MusicBrainz
+    const mbQuery = encodeURIComponent(`artist:"${artist}" AND recording:"${title}"`);
+    const mbUrl = `https://musicbrainz.org/ws/2/recording/?query=${mbQuery}&limit=1&inc=releases&fmt=json`;
+
+    const mbResponse = await fetch(mbUrl, {
+      headers: { 'User-Agent': 'FMOliveRadio/1.0 ( gastonschachtl@gmail.com )' }  // <<< CAMBIÁ ESTE EMAIL POR EL TUYO >>>
+    });
+
+    if (!mbResponse.ok) throw new Error('Error en MusicBrainz');
+
+    const mbData = await mbResponse.json();
+
+    if (mbData.count === 0 || !mbData.recordings || mbData.recordings.length === 0) {
+      throw new Error('No se encontró la canción');
+    }
+
+    const releases = mbData.recordings[0].releases;
+    if (!releases || releases.length === 0) throw new Error('No hay releases');
+
+    const releaseId = releases[0].id;
+
+    // Paso 2: URLs directas de Cover Art Archive
+    const caUrlSmall = `https://coverartarchive.org/release/${releaseId}/front-500`;
+    const caUrl = `https://coverartarchive.org/release/${releaseId}/front-1200`;
+
+    // Verificamos que exista la portada grande (HEAD request)
+    const checkResponse = await fetch(caUrl, { method: 'HEAD' });
+    if (!checkResponse.ok) throw new Error('No hay portada disponible');
+
+    const results = {
+      title,
+      artist,
+      art: caUrlSmall,    // Portada actual (más rápida)
+      cover: caUrl,       // Fondo grande
       stream_url: "#not-found",
-  };
-  cache[cacheKey] = results;
-  return results;
-};
+    };
+    cache[cacheKey] = results;
+    return results;
 
-// AUDIO 
-
-const AUDIO_TYPE = 'audio/aac';
-
-// Variável global para armazenar as músicas
-var audio = new Audio(URL_STREAMING);
-
-// Player control
-class Player {
-    constructor() {
-        this.play = function () {
-            audio.play();
-
-            var defaultVolume = document.getElementById('volume').value;
-
-            if (typeof (Storage) !== 'undefined') {
-                if (localStorage.getItem('volume') !== null) {
-                    audio.volume = intToDecimal(localStorage.getItem('volume'));
-                } else {
-                    audio.volume = intToDecimal(defaultVolume);
-                }
-            } else {
-                audio.volume = intToDecimal(defaultVolume);
-            }
-            document.getElementById('volIndicator').innerHTML = defaultVolume;
-            
-            togglePlay(); // Adiciona esta linha para atualizar o botão
-        };
-
-        this.pause = function () {
-            audio.pause();
-        };
-    }
-}
-
-// On play, change the button to pause
-audio.onplay = function () {
-    var botao = document.getElementById('playerButton');
-    var bplay = document.getElementById('buttonPlay');
-    if (botao.className === 'fa fa-play') {
-        botao.className = 'fa fa-pause';
-        bplay.firstChild.data = 'PAUSAR';
-    }
-}
-
-// On pause, change the button to play
-audio.onpause = function () {
-    var botao = document.getElementById('playerButton');
-    var bplay = document.getElementById('buttonPlay');
-    if (botao.className === 'fa fa-pause') {
-        botao.className = 'fa fa-play';
-        bplay.firstChild.data = 'PLAY';
-    }
-}
-
-// Unmute when volume changed
-audio.onvolumechange = function () {
-    if (audio.volume > 0) {
-        audio.muted = false;
-    }
-}
-
-audio.onerror = function () {
-    var confirmacao = confirm('Stream Down / Network Error. \nClick OK to try again.');
-
-    if (confirmacao) {
-        window.location.reload();
-    }
-}
-
-document.getElementById('volume').oninput = function () {
-    audio.volume = intToDecimal(this.value);
-
-    var page = new Page();
-    page.changeVolumeIndicator(this.value);
-}
-
-
-function togglePlay() {
-    const playerButton = document.getElementById("playerButton");
-    const isPlaying = playerButton.classList.contains("fa-pause-circle");
-  
-    if (isPlaying) {
-      playerButton.classList.remove("fa-pause-circle");
-      playerButton.classList.add("fa-play-circle");
-      playerButton.style.textShadow = "0 0 5px black";
-      audio.pause();
-    } else {
-      playerButton.classList.remove("fa-play-circle");
-      playerButton.classList.add("fa-pause-circle");
-      playerButton.style.textShadow = "0 0 5px black";
-      audio.load();
-      audio.play();
-    }
+  } catch (error) {
+    console.log("Error buscando portada en MusicBrainz:", error);
+    const results = {
+      title,
+      artist,
+      art: defaultArt,
+      cover: defaultCover,
+      stream_url: "#not-found",
+    };
+    cache[cacheKey] = results;
+    return results;
   }
-
-function volumeUp() {
-    var vol = audio.volume;
-    if(audio) {
-        if(audio.volume >= 0 && audio.volume < 1) {
-            audio.volume = (vol + .01).toFixed(2);
-        }
-    }
-}
-
-function volumeDown() {
-    var vol = audio.volume;
-    if(audio) {
-        if(audio.volume >= 0.01 && audio.volume <= 1) {
-            audio.volume = (vol - .01).toFixed(2);
-        }
-    }
-}
-
-function mute() {
-    if (!audio.muted) {
-        document.getElementById('volIndicator').innerHTML = 0;
-        document.getElementById('volume').value = 0;
-        audio.volume = 0;
-        audio.muted = true;
-    } else {
-        var localVolume = localStorage.getItem('volume');
-        document.getElementById('volIndicator').innerHTML = localVolume;
-        document.getElementById('volume').value = localVolume;
-        audio.volume = intToDecimal(localVolume);
-        audio.muted = false;
-    }
-}
-
-document.addEventListener('keydown', function (event) {
-    var key = event.key;
-    var slideVolume = document.getElementById('volume');
-    var page = new Page();
-
-    switch (key) {
-        // Arrow up
-        case 'ArrowUp':
-            volumeUp();
-            slideVolume.value = decimalToInt(audio.volume);
-            page.changeVolumeIndicator(decimalToInt(audio.volume));
-            break;
-        // Arrow down
-        case 'ArrowDown':
-            volumeDown();
-            slideVolume.value = decimalToInt(audio.volume);
-            page.changeVolumeIndicator(decimalToInt(audio.volume));
-            break;
-        // Spacebar
-        case ' ':
-        case 'Spacebar':
-            togglePlay();
-            break;
-        // P
-        case 'p':
-        case 'P':
-            togglePlay();
-            break;
-        // M
-        case 'm':
-        case 'M':
-            mute();
-            break;
-        // Numeric keys 0-9
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9':
-            var volumeValue = parseInt(key);
-            audio.volume = volumeValue / 10;
-            slideVolume.value = volumeValue * 10;
-            page.changeVolumeIndicator(volumeValue * 10);
-            break;
-    }
-}); 
-
-function intToDecimal(vol) {
-    return vol / 100;
-}
-
-function decimalToInt(vol) {
-    return vol * 100;
-} 
-
-
+};
